@@ -1,0 +1,13 @@
+# Reference repo (not part of otto)
+gsd-oc/
+
+# macOS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Testing artifacts
+/test-*
