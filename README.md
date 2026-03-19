@@ -30,49 +30,43 @@ cd otto
 ./setup.sh
 ```
 
-This creates symlinks in `~/.config/opencode/` so Otto commands are available in any project.
+This creates symlinks in `~/.config/opencode/` so Otto commands are available in any project as `/otto/<command>`.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/otto-init` | Initialize a project — creates `.otto/` structure, discovers goals and constraints |
-| `/otto-plan [phase]` | Create execution plans — breaks a phase into small, executable plans |
-| `/otto-research [phase]` | Deep research — resolves unknowns that block execution |
-| `/otto-exec [plan]` | Execute a plan — runs tasks, verifies results, captures learnings |
-| `/otto-progress [phase]` | Show work tree — what's done, what's next, blockers |
-| `/otto-summarize` | Full snapshot — codebase, tech stack, project history |
+| `/otto/plan [description]` | Create execution plans — breaks a description into small, executable plans |
+| `/otto/research [topic]` | Deep research — investigates codebase or domain topics |
+| `/otto/execute [plan]` | Execute a plan — runs tasks, verifies results, captures learnings |
 
 ## Workflow
 
 ```
-/otto-init          # Set up project, define phases
+/otto/plan "user authentication with JWT"  # Create executable plans
     ↓
-/otto-plan 1        # Break Phase 1 into executable plans
+/otto/research "JWT best practices"       # (optional) Resolve unknowns
     ↓
-/otto-research 1    # (optional) Resolve any unknowns
-    ↓
-/otto-exec 01-01    # Execute first plan
-    ↓
-/otto-progress      # Check where you are
+/otto/execute 01-01                        # Execute first plan
     ↓
 ... repeat ...
 ```
 
 ## Project Structure
 
-When you run `/otto-init`, Otto creates:
+When you first run `/otto/plan`, Otto creates:
 
 ```
 .otto/
 ├── config.json     # Minimal settings
 ├── PROJECT.md      # Vision, phases, current state
 ├── CODEBASE.md     # Technical docs + accumulated learnings
-└── phases/
-    └── 01-setup/
-        ├── 01-01-PLAN.md
-        ├── 01-02-PLAN.md
-        └── ...
+├── STATE.md        # Plan execution history
+├── RESEARCH.md     # Research findings
+└── plans/
+    ├── 01-PLAN.md
+    ├── 02-PLAN.md
+    └── ...
 ```
 
 ### PROJECT.md
@@ -90,6 +84,14 @@ Executable plans with:
 - 2-3 focused tasks (15-60 min each)
 - Verification steps
 - Embedded unknowns (if any)
+
+### STATE.md
+
+Execution history tracking all plans, timestamps, and outcomes.
+
+### RESEARCH.md
+
+Research findings from `/otto/research` command.
 
 ## Learning System
 
@@ -124,16 +126,14 @@ Learnings accumulate in `CODEBASE.md` with decision tracking:
 
 | Term | Meaning |
 |------|---------|
-| **Phase** | A major milestone in your project (e.g., "Setup", "Auth", "API"). Contains multiple plans. |
 | **Plan** | A small, executable unit of work (30-60 min). Contains 2-3 tasks. Lives in a PLAN.md file. |
 | **Task** | A single focused action within a plan (15-60 min). Has an action, verification, and done criteria. |
 | **Wave** | Execution order for plans. Wave 1 plans have no dependencies and can run in parallel. Wave 2 depends on Wave 1, etc. |
 | **Unknown** | A question that blocks clean execution. Can be resolved via `/otto-research` or answered by the user. |
 | **Autonomous** | A plan with no unresolved unknowns. Ready to execute without human input. |
-| **Micro-retro** | Quick reflection after each task to capture learnings while they're fresh. |
-| **Phase retro** | Summary and reflection when all plans in a phase complete. |
 | **CODEBASE.md** | Living document that accumulates technical knowledge and learnings over time. |
 | **PROJECT.md** | Single source of truth for project vision, phases, constraints, and current state. |
+| **STATE.md** | Execution history tracking all plans, timestamps, and outcomes. |
 | **Decision** | A choice made during execution. Tracked with rationale and outcome (✓ Good / ⚠️ Revisit / — Pending). |
 | **Pattern** | A convention established during execution that should be followed going forward. |
 | **Context** | Files referenced by a plan (via `@` references) that provide background for execution. |
