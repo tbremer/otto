@@ -48,7 +48,7 @@ Read whatever exists. Every file is optional — use empty string as fallback.
 
 ```bash
 # Previous plans for continuity
-PRIOR_PLANS=$(cat .otto/plans/*-PLAN.md 2>/dev/null || echo "")
+PRIOR_PLANS=$(cat .otto/plans/*/plan-*.md 2>/dev/null || echo "")
 
 # State file
 STATE=$(cat .otto/STATE.md 2>/dev/null || echo "")
@@ -161,15 +161,22 @@ fi
 
 Note the result — pass to the planner so it knows whether to use Context7 or fall back to WebFetch.
 
-## 5. Calculate Plan Number
+## 5. Generate Plan Folder
 
 ```bash
-# Find highest existing plan number
-LAST_PLAN=$(ls .otto/plans/*-PLAN.md 2>/dev/null | grep -oP '\d+(?=-PLAN\.md)' | sort -n | tail -1)
-NEXT_PLAN_START=$(( ${LAST_PLAN:-0} + 1 ))
+# Generate date prefix
+DATE=$(date -u +%Y%m%d)
 
-# Generate slug
-SLUG=$(echo "$DESCRIPTION" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | tr ' ' '-' | cut -c1-40)
+# Generate a short, meaningful, terse kebab-case slug from the description
+# (agent should derive this — not mechanical truncation)
+# e.g. "user authentication with JWT" → "jwt-auth"
+#      "add dark mode toggle to settings" → "dark-mode"
+#      "refactor database connection pooling" → "db-pooling"
+SLUG="<agent-derived terse slug>"
+
+# Create the plan folder
+PLAN_DIR=".otto/plans/${DATE}-${SLUG}"
+mkdir -p "$PLAN_DIR"
 ```
 
 ## 6. Assemble Brief and Spawn @otto-planner
@@ -185,8 +192,9 @@ Construct the planning brief with everything gathered, then hand off:
 ${DESCRIPTION}
 
 ## Plan Files
-Write plans to: .otto/plans/{NN}-PLAN.md
-Starting plan number: ${NEXT_PLAN_START} (zero-padded to 2 digits, e.g. 01, 02)
+Plan folder: ${PLAN_DIR}
+Write plans to: ${PLAN_DIR}/plan-{NN}.md
+Starting plan number: 00 (zero-padded to 2 digits, e.g. 00, 01, 02)
 
 ## Context7 MCP
 Available: ${HAS_CONTEXT7}
@@ -225,7 +233,7 @@ ${PATTERNS}
 3. If user context/decisions exist, honor them as locked constraints.
 4. Match codebase patterns from discovery — same conventions, libraries, structure.
 5. Use Context7 or WebFetch for unfamiliar tech (don't research obvious patterns).
-6. Write PLAN.md files to .otto/plans/
+6. Write plan files to ${PLAN_DIR}/plan-{NN}.md
 7. Self-verify before returning.
 ```
 
@@ -249,8 +257,9 @@ Present results:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-▶ Review: cat .otto/plans/*-PLAN.md
-▶ Plan more: /otto-plan <next thing>
+▶ Review: cat ${PLAN_DIR}/plan-*.md
+▶ Execute: /otto/execute ${PLAN_DIR}
+▶ Plan more: /otto/plan <next thing>
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
