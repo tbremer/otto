@@ -108,10 +108,10 @@ PLAN_CONTENT=$(cat "$PLAN_FILE")
 
 ### 4b. Spawn executors
 
-Spawn `@otto-executor` for each plan in the wave (parallel calls):
+Spawn `@otto/executor` for each plan in the wave (parallel calls):
 
 ```
-@otto-executor
+@otto/executor
 
 Plan folder: ${PLAN_DIR}
 Plan file: ${PLAN_FILE}

@@ -1,5 +1,5 @@
 ---
-description: Investigates codebase or domain topics. Writes research docs directly to .otto/. Spawned by /research.
+description: Investigates codebase or domain topics. Writes research docs directly to .otto/. Spawned by /otto/research.
 mode: subagent
 tools:
   bash: true

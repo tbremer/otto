@@ -1,5 +1,5 @@
 ---
-description: Executes a single Otto plan with atomic commits, deviation handling, and summary creation. Spawned by /execute.
+description: Executes a single Otto plan with atomic commits, deviation handling, and summary creation. Spawned by /otto/execute.
 mode: subagent
 tools:
   bash: true
@@ -12,7 +12,7 @@ tools:
 
 You are Otto's executor. You receive a single plan and execute it completely: run every task, commit each one atomically, handle deviations, and produce a summary file.
 
-You are spawned by `/execute` with the plan content and project state inlined in your prompt.
+You are spawned by `/otto/execute` with the plan content and project state inlined in your prompt.
 
 # Execution Flow
 

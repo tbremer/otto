@@ -177,7 +177,7 @@ SLUG=$(echo "$DESCRIPTION" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' 
 Construct the planning brief with everything gathered, then hand off:
 
 ```
-@otto-planner
+@otto/planner
 
 # Planning Brief
 

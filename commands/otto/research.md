@@ -90,7 +90,7 @@ fi
 ### Codebase mode brief:
 
 ```
-@otto-researcher
+@otto/researcher
 
 # Research Brief
 
@@ -127,7 +127,7 @@ Return confirmation only, not document contents.
 ### Topic mode brief:
 
 ```
-@otto-researcher
+@otto/researcher
 
 # Research Brief
 

@@ -1,5 +1,5 @@
 ---
-description: Creates executable PLAN.md files from a planning brief. Invoked by /plan.
+description: Creates executable PLAN.md files from a planning brief. Invoked by /otto/plan.
 mode: subagent
 temperature: 0.1
 tools:

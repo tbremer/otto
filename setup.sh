@@ -14,41 +14,31 @@ echo ""
 mkdir -p "$CONFIG_DIR/commands"
 mkdir -p "$CONFIG_DIR/agents"
 
-# Symlink each command individually (otto-*.md files)
-for cmd in "$SCRIPT_DIR/commands"/otto-*.md; do
-  if [ -f "$cmd" ]; then
-    name=$(basename "$cmd")
-    if [ -L "$CONFIG_DIR/commands/$name" ]; then
-      rm "$CONFIG_DIR/commands/$name"
-    elif [ -f "$CONFIG_DIR/commands/$name" ]; then
-      echo "WARNING: $CONFIG_DIR/commands/$name exists and is not a symlink. Skipping."
-      continue
-    fi
-    ln -s "$cmd" "$CONFIG_DIR/commands/$name"
-    echo "✓ Linked commands/$name"
-  fi
-done
+# Symlink the otto commands directory
+if [ -L "$CONFIG_DIR/commands/otto" ]; then
+  rm "$CONFIG_DIR/commands/otto"
+elif [ -d "$CONFIG_DIR/commands/otto" ]; then
+  echo "WARNING: $CONFIG_DIR/commands/otto exists and is not a symlink. Skipping."
+  exit 1
+fi
+ln -s "$SCRIPT_DIR/commands/otto" "$CONFIG_DIR/commands/otto"
+echo "✓ Linked commands/otto/"
 
-# Symlink each agent individually (otto-*.md files)
-for agent in "$SCRIPT_DIR/agents"/otto-*.md; do
-  if [ -f "$agent" ]; then
-    name=$(basename "$agent")
-    if [ -L "$CONFIG_DIR/agents/$name" ]; then
-      rm "$CONFIG_DIR/agents/$name"
-    elif [ -f "$CONFIG_DIR/agents/$name" ]; then
-      echo "WARNING: $CONFIG_DIR/agents/$name exists and is not a symlink. Skipping."
-      continue
-    fi
-    ln -s "$agent" "$CONFIG_DIR/agents/$name"
-    echo "✓ Linked agents/$name"
-  fi
-done
+# Symlink the otto agents directory
+if [ -L "$CONFIG_DIR/agents/otto" ]; then
+  rm "$CONFIG_DIR/agents/otto"
+elif [ -d "$CONFIG_DIR/agents/otto" ]; then
+  echo "WARNING: $CONFIG_DIR/agents/otto exists and is not a symlink. Skipping."
+  exit 1
+fi
+ln -s "$SCRIPT_DIR/agents/otto" "$CONFIG_DIR/agents/otto"
+echo "✓ Linked agents/otto/"
 
 echo ""
 echo "Otto installed!"
 echo ""
 echo "Commands available:"
-echo "  /otto-plan     — Create execution plans"
-echo "  /otto-research — Deep research on unknowns"
-echo "  /otto-execute     — Execute a plan"
+echo "  /otto/plan     — Create execution plans"
+echo "  /otto/research — Deep research on unknowns"
+echo "  /otto/execute  — Execute a plan"
 echo ""
