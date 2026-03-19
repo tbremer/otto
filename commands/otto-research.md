@@ -1,225 +1,224 @@
 ---
-description: Deep research to resolve unknowns in phase plans
-agent: build
-argument-hint: "[phase-number]"
-tools:
-  - question
-  - read
-  - write
-  - edit
-  - grep
-  - glob
-  - list
-  - task
+description: Research a topic or map the existing codebase to inform planning
 ---
 
-Resolve unknowns in phase plans through deep research. Spawns the otto-researcher subagent to investigate questions the planner couldn't answer.
+<objective>
+Investigate before planning. Two modes in one command:
 
-**Usage:** `/otto-research [phase]` or `/otto-research` (uses current in-progress phase)
+1. **Codebase mode** (`/research codebase`) — Analyze the existing codebase: stack, architecture, conventions, structure, concerns. Writes docs to `.otto/codebase/`.
+2. **Topic mode** (`/research <topic>`) — Research how to build something: standard stack, patterns, pitfalls, code examples. Writes RESEARCH.md to a plan folder or `.otto/`.
 
-## Process
+Both modes spawn a single `@otto-researcher` subagent with the mode and context inlined.
 
-### 1. Validate Environment
+If no arguments, ask the user what they want to research.
+</objective>
 
-Check that `.otto/` exists:
+<process>
 
-Use `glob` to confirm `.otto/PROJECT.md` and `.otto/config.json` exist.
+## 1. Parse Mode
 
-**If not found:** Tell the user to run `/otto-init` first and stop.
-
-### 2. Parse Arguments
-
-Extract phase number from `$ARGUMENTS`:
-- If provided: Use that phase number (e.g., `1`, `2`)
-- If not provided: Read PROJECT.md and find the phase with status "in-progress"
-
-Normalize the phase number to zero-padded format (1 → 01, 2 → 02).
-
-### 3. Find Phase Plans
-
-Locate the phase directory and plans:
-
-Use `glob` to locate the phase directory:
-
-- `.otto/phases/${PHASE}-*`
-
-Then use `glob` to list plan files in that directory:
-
-- `{PHASE_DIR}/*.md`
-
-**If no plans found:** Tell the user to run `/otto-plan {phase}` first.
-
-### 4. Extract Unknowns
-
-Read all PLAN.md files and extract `<unknowns>` sections:
-
-Use `grep` over the plan files to extract `<unknowns>` blocks, then parse unchecked items (`- [ ]`).
-
-Parse the unknowns:
-- Extract the question text (lines starting with `- [ ]`)
-- Note which plan file it came from
-- Note what it blocks (text after "— blocks")
-
-### 5. Check if Research Needed
-
-**If no unknowns found:**
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- OTTO ► NO RESEARCH NEEDED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-All plans in Phase {N} are ready to execute (autonomous: true).
-
-Run the plans or review them:
-  (use `read` on `{first-plan-path}`)
+```bash
+if [ -z "$ARGUMENTS" ]; then
+  # No args — ask user
+  # Use question tool: "What do you want to research?"
+  # Options: "Map my codebase", "Research a topic for planning"
+elif echo "$ARGUMENTS" | grep -qi "^codebase"; then
+  MODE="codebase"
+  TOPIC="codebase analysis"
+else
+  MODE="topic"
+  TOPIC="$ARGUMENTS"
+fi
 ```
 
-Stop here.
+## 2. Initialize .otto
 
-### 6. Present Unknowns
-
-Show the user what needs research:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- OTTO ► RESEARCH NEEDED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Phase {N}: {name} has {X} unknowns to resolve:
-
-1. [Plan {XX-YY}] {Question}
-   Blocks: {task or decision}
-
-2. [Plan {XX-YY}] {Question}
-   Blocks: {task or decision}
-
-Options:
-  • Research all — I'll investigate each and update the plans
-  • Pick specific — tell me which numbers to research
-  • Answer now — if you already know, just tell me
+```bash
+if [ ! -d ".otto" ]; then
+  mkdir -p .otto/plans
+  echo "# Otto Project State" > .otto/STATE.md
+  echo "Created: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> .otto/STATE.md
+fi
 ```
 
-Wait for user response.
+## 3. Gather Context
 
-### 7. Handle User Response
+Read whatever exists — everything optional:
 
-**If user provides answers directly:**
-For each answer provided:
-1. Update the relevant PLAN.md file
-2. Check off the unknown in `<unknowns>`
-3. Update the affected `<action>` with specifics
-4. Set `autonomous: true` if all unknowns resolved
+```bash
+STATE=$(cat .otto/STATE.md 2>/dev/null || echo "")
+CONTEXT_MD=$(cat .otto/CONTEXT.md 2>/dev/null || echo "")
 
-Then show what was updated and exit.
-
-**If user says "research all" or picks specific items:**
-Continue to step 8.
-
-### 8. Gather Context for Researcher
-
-For each unknown to research, collect context:
-
-1. Read the full PLAN.md containing the unknown
-2. Read referenced files in `<context>`
-3. Read `.otto/PROJECT.md` for project context
-4. Read `.otto/CODEBASE.md` for technical context
-
-### 9. Spawn otto-researcher
-
-Use the Task tool to spawn the `otto-researcher` subagent:
-
-**Prompt for the researcher:**
+# For topic mode, check if a plan folder was specified (e.g. "/research auth-jwt for 02092026-auth-jwt")
+# Otherwise research goes to .otto/RESEARCH.md
 ```
-Resolve these unknowns from Phase {N}: {phase name}
 
-## Unknowns to Research
+### For codebase mode, also gather:
 
-### Unknown 1 (Plan {XX-YY})
-Question: {question text}
-Blocks: {task or decision}
-Plan context: {objective and relevant task from the plan}
+```bash
+# Check what already exists
+EXISTING_CODEBASE=$(ls .otto/codebase/*.md 2>/dev/null)
+```
 
-### Unknown 2 (Plan {XX-YY})
-...
+If codebase docs already exist, inform user and ask: Update existing? View existing? Skip?
 
-## Project Context
-{relevant sections from PROJECT.md}
+### For topic mode, also gather:
 
-## Codebase Context  
-{relevant sections from CODEBASE.md}
+```bash
+# Check for existing research
+EXISTING_RESEARCH=$(cat .otto/RESEARCH.md 2>/dev/null || echo "")
+
+# Quick stack detection for context (same as /plan does)
+PACKAGE_JSON=$(cat package.json 2>/dev/null || echo "")
+CARGO_TOML=$(cat Cargo.toml 2>/dev/null || echo "")
+PACKAGE_SWIFT=$(cat Package.swift 2>/dev/null || echo "")
+PYPROJECT=$(cat pyproject.toml 2>/dev/null || echo "")
+GO_MOD=$(cat go.mod 2>/dev/null || echo "")
+```
+
+## 4. Check Context7 MCP Availability
+
+```bash
+HAS_CONTEXT7="false"
+if grep -q "context7" opencode.json .opencode/opencode.json ~/.config/opencode/opencode.json 2>/dev/null; then
+  HAS_CONTEXT7="true"
+fi
+```
+
+## 5. Spawn @otto-researcher
+
+### Codebase mode brief:
+
+```
+@otto-researcher
+
+# Research Brief
+
+## Mode
+codebase
+
+## Output Location
+.otto/codebase/
+
+## Context7 MCP
+Available: ${HAS_CONTEXT7}
+
+## Project State
+${STATE}
+
+## User Context
+${CONTEXT_MD}
 
 ## Instructions
-1. Research each unknown thoroughly
-2. Provide concrete, actionable answers
-3. Include code snippets where helpful
-4. For each answer, specify exactly how to update the plan
+Analyze the codebase thoroughly. Write documents directly to .otto/codebase/:
+- STACK.md — Languages, runtime, frameworks, key dependencies, platform
+- ARCHITECTURE.md — Pattern overview, layers, data flow, entry points, error handling
+- STRUCTURE.md — Directory tree, file purposes, naming conventions, where to add new code
+- CONVENTIONS.md — Naming, style, imports, error handling, function/module patterns
+- CONCERNS.md — Tech debt, bugs, security, performance, fragile areas, test gaps
 
-Return your findings with specific plan updates.
+Each document must include actual file paths in backticks.
+Be prescriptive ("Use X pattern") not descriptive ("X pattern is used").
+Write current state only — no temporal language.
+
+Return confirmation only, not document contents.
 ```
 
-### 10. Apply Research Findings
+### Topic mode brief:
 
-After the researcher returns, for each resolved unknown:
+```
+@otto-researcher
 
-1. **Update PLAN.md file:**
-   - Check off the unknown: `- [x] {question} — RESOLVED`
-   - Update the affected task's `<action>` with researched specifics
-   - If all unknowns resolved, set `autonomous: true` in frontmatter
+# Research Brief
 
-2. **Track what changed** for the summary
+## Mode
+topic
 
-### 11. Present Results
+## Topic
+${TOPIC}
+
+## Output Location
+.otto/RESEARCH.md
+
+## Context7 MCP
+Available: ${HAS_CONTEXT7}
+
+## Project State
+${STATE}
+
+## User Context / Decisions
+${CONTEXT_MD}
+
+## Current Stack
+${PACKAGE_JSON}${CARGO_TOML}${PACKAGE_SWIFT}${PYPROJECT}${GO_MOD}
+
+## Existing Research
+${EXISTING_RESEARCH}
+
+## Instructions
+Research how to implement "${TOPIC}" well.
+
+The question is NOT "which library should I use?"
+The question is: "What do I not know that I don't know?"
+
+Discover:
+- What's the established architecture pattern?
+- What libraries form the standard stack?
+- What problems do people commonly hit?
+- What's current SOTA vs what training data thinks is SOTA?
+- What should NOT be hand-rolled?
+
+Write RESEARCH.md with sections the planner expects:
+- User Constraints (from CONTEXT.md if exists — copy verbatim)
+- Summary (executive overview)
+- Standard Stack (with versions)
+- Architecture Patterns (with code examples)
+- Don't Hand-Roll (table of problems with existing solutions)
+- Common Pitfalls (with warning signs)
+- Code Examples (from authoritative sources)
+- Sources (with confidence levels)
+
+Be prescriptive: "Use X" not "Consider X or Y."
+```
+
+## 6. Handle Response
+
+### `## RESEARCH COMPLETE`:
+
+Update `.otto/STATE.md` with research activity timestamp.
+
+Present:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- OTTO ► RESEARCH COMPLETE
+ OTTO ► RESEARCHED ✓
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Resolved {X}/{Y} unknowns in Phase {N}:
+{Mode}: {Topic/Codebase}
+Confidence: {level}
+{Brief summary from researcher}
 
-✓ [Plan {XX-YY}] {Question}
-  → {Brief summary of answer}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-✓ [Plan {XX-YY}] {Question}
-  → {Brief summary of answer}
+▶ Review: cat .otto/{output path}
+▶ Plan: /plan <description>
 
-Plans updated:
-  • {plan-path} — now autonomous: true
-  • {plan-path} — now autonomous: true
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**If some unknowns couldn't be resolved:**
-```
-⚠ {N} unknowns still need resolution:
+### `## RESEARCH BLOCKED`:
 
-✗ [Plan {XX-YY}] {Question}
-  → Needs: {what the researcher determined is needed — user decision, external info, etc.}
+Extract questions. Use the question tool to present them. Re-spawn with new context.
 
-Options:
-  • Answer now — tell me your decision
-  • Skip — proceed with current assumptions in the plan
-```
+</process>
 
-### 12. Next Steps
-
-**If all unknowns resolved:**
-```
-All plans are ready to execute.
-
-Next: /otto-exec {phase} — or review the updated plans first
-```
-
-**If some remain:**
-```
-{N} plans are ready (autonomous: true).
-{M} plans have remaining unknowns.
-
-You can execute the ready plans while resolving the others.
-```
-
-## Notes
-
-- Research should be thorough but focused — we're answering specific questions, not exploring broadly
-- The researcher subagent does the investigation; this command orchestrates and applies results
-- Always show the user what changed in their plan files
-- If user has the answer, let them provide it directly — no need to spawn researcher
+<rules>
+- 1 subagent call for most research. Blocked→retry may add 1 more.
+- Up to 10 WebFetch calls within the researcher for official docs.
+- Context7 preferred over WebFetch when available.
+- Never fail on missing files. Everything optional.
+- If .otto doesn't exist, create it silently.
+- Codebase mode writes multiple docs to .otto/codebase/. Topic mode writes one RESEARCH.md.
+- The researcher writes files directly — don't transfer document contents back through the orchestrator.
+- Do NOT commit research files. The user decides when to commit.
+</rules>
